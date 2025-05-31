@@ -5,8 +5,18 @@ import { Pacifico } from "next/font/google"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Menu, X, Bell, MessageCircle, Heart, Home, Info, Video } from "lucide-react"
+import { Search, Menu, X, Bell, MessageCircle, Heart, Home, Info, Video, LogOut } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { AuthModal } from "./AuthModal"
+import { useSession, signOut } from "next-auth/react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import Auth_modal from "./Auth_modal"
 
 const pacifico = Pacifico({
   subsets: ["latin"],
@@ -14,25 +24,30 @@ const pacifico = Pacifico({
   variable: "--font-pacifico",
 })
 
-
-// Mock user state - replace with your actual auth logic
-const mockUser = {
-  isLoggedIn: false, // Change to true to see logged-in state
-  name: "John Doe",
-  avatar: null, // Set to image URL if available
-  notifications: 3,
-  messages: 2,
-}
-
-
-
-
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(mockUser.isLoggedIn)
+  const [showAuthModal, setShowAuthModal] = useState(false)
+  const [onClose , setOnClose] = useState(() => () => setShowAuthModal(false))
+  const [authMode, setAuthMode] = useState("signin")
+  const { data: session, status } = useSession()
+
+  // Mock notification data - replace with real data
+  const mockNotifications = 3
+  const mockMessages = 2
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
+  }
+
+  const handleAuthClick = (mode) => {
+    setAuthMode(mode)
+    setShowAuthModal(true)
+    setIsMobileMenuOpen(false)
+  }
+
+  const handleSignOut = async () => {
+    
+    await signOut({ callbackUrl: "/" })
   }
 
   const getInitials = (name) => {
@@ -42,6 +57,8 @@ const Navbar = () => {
       .join("")
       .toUpperCase()
   }
+
+  const isLoggedIn = status === "authenticated" && session
 
   return (
     <>
@@ -86,13 +103,13 @@ const Navbar = () => {
                   <Button
                     variant="ghost"
                     className="text-gray-700 hover:text-purple-600 hover:bg-purple-50"
-                    onClick={() => setIsLoggedIn(true)}
+                    onClick={() => handleAuthClick("signin")}
                   >
                     Login
                   </Button>
                   <Button
                     className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6"
-                    onClick={() => setIsLoggedIn(true)}
+                    onClick={() => handleAuthClick("signup")}
                   >
                     Join
                   </Button>
@@ -102,37 +119,58 @@ const Navbar = () => {
                 <>
                   <div className="relative">
                     <Bell className="h-6 w-6 text-gray-600 hover:text-purple-600 cursor-pointer transition-colors" />
-                    {mockUser.notifications > 0 && (
+                    {mockNotifications > 0 && (
                       <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
-                        {mockUser.notifications}
+                        {mockNotifications}
                       </Badge>
                     )}
                   </div>
 
                   <div className="relative">
                     <MessageCircle className="h-6 w-6 text-gray-600 hover:text-purple-600 cursor-pointer transition-colors" />
-                    {mockUser.messages > 0 && (
+                    {mockMessages > 0 && (
                       <Badge className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center p-0">
-                        {mockUser.messages}
+                        {mockMessages}
                       </Badge>
                     )}
                   </div>
 
                   <Heart className="h-6 w-6 text-gray-600 hover:text-purple-600 cursor-pointer transition-colors" />
 
-                  <div className="flex items-center cursor-pointer">
-                    {mockUser.avatar ? (
-                      <img
-                        src={mockUser.avatar || "/placeholder.svg"}
-                        alt="Profile"
-                        className="h-8 w-8 rounded-full border-2 border-gray-300"
-                      />
-                    ) : (
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-white text-sm font-medium">
-                        {getInitials(mockUser.name)}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <div className="flex items-center cursor-pointer">
+                        {session?.user?.image ? (
+                          <img
+                            src={session.user.image || "/placeholder.svg"}
+                            alt="Profile"
+                            className="h-8 w-8 rounded-full border-2 border-gray-300"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-white text-sm font-medium">
+                            {getInitials(session?.user?.name || "User")}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="flex items-center justify-start gap-2 p-2">
+                        <div className="flex flex-col space-y-1 leading-none">
+                          <p className="font-medium">{session?.user?.name}</p>
+                          <p className="w-[200px] truncate text-sm text-muted-foreground">{session?.user?.email}</p>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem>Profile</DropdownMenuItem>
+                      <DropdownMenuItem>Settings</DropdownMenuItem>
+                      <DropdownMenuItem>Billing</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={handleSignOut}>
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Log out
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </>
               )}
             </div>
@@ -183,19 +221,13 @@ const Navbar = () => {
                     <Button
                       variant="outline"
                       className="w-full border-purple-600 text-purple-600 hover:bg-purple-50"
-                      onClick={() => {
-                        setIsLoggedIn(true)
-                        setIsMobileMenuOpen(false)
-                      }}
+                      onClick={() => handleAuthClick("signin")}
                     >
                       Login
                     </Button>
                     <Button
                       className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
-                      onClick={() => {
-                        setIsLoggedIn(true)
-                        setIsMobileMenuOpen(false)
-                      }}
+                      onClick={() => handleAuthClick("signup")}
                     >
                       Join Now
                     </Button>
@@ -205,19 +237,11 @@ const Navbar = () => {
                 // Logged in mobile menu
                 <>
                   <div className="flex items-center space-x-3 py-2">
-                    {mockUser.avatar ? (
-                      <img
-                        src={mockUser.avatar || "/placeholder.svg"}
-                        alt="Profile"
-                        className="h-10 w-10 rounded-full border-2 border-gray-300"
-                      />
-                    ) : (
-                      <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-white font-medium">
-                        {getInitials(mockUser.name)}
+                    <div className="h-10 w-10 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 flex items-center justify-center text-white font-medium">
+                        {getInitials(session?.user?.name || "User")}
                       </div>
-                    )}
                     <div>
-                      <p className="font-medium text-gray-900">{mockUser.name}</p>
+                      <p className="font-medium text-gray-900">{session?.user?.name}</p>
                       <p className="text-sm text-gray-500">View Profile</p>
                     </div>
                   </div>
@@ -228,9 +252,7 @@ const Navbar = () => {
                         <Bell className="h-5 w-5 text-gray-600" />
                         <span className="text-gray-700">Notifications</span>
                       </div>
-                      {mockUser.notifications > 0 && (
-                        <Badge className="bg-red-500 text-white">{mockUser.notifications}</Badge>
-                      )}
+                      {mockNotifications > 0 && <Badge className="bg-red-500 text-white">{mockNotifications}</Badge>}
                     </div>
 
                     <div className="flex items-center justify-between py-2">
@@ -238,7 +260,7 @@ const Navbar = () => {
                         <MessageCircle className="h-5 w-5 text-gray-600" />
                         <span className="text-gray-700">Messages</span>
                       </div>
-                      {mockUser.messages > 0 && <Badge className="bg-red-500 text-white">{mockUser.messages}</Badge>}
+                      {mockMessages > 0 && <Badge className="bg-red-500 text-white">{mockMessages}</Badge>}
                     </div>
 
                     <div className="flex items-center space-x-3 py-2">
@@ -246,14 +268,8 @@ const Navbar = () => {
                       <span className="text-gray-700">Favorites</span>
                     </div>
 
-                    <Button
-                      variant="outline"
-                      className="w-full mt-4"
-                      onClick={() => {
-                        setIsLoggedIn(false)
-                        setIsMobileMenuOpen(false)
-                      }}
-                    >
+                    <Button variant="outline" className="w-full mt-4" onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
                       Logout
                     </Button>
                   </div>
@@ -263,6 +279,9 @@ const Navbar = () => {
           </div>
         )}
       </nav>
+
+      {/* Auth Modal */}
+      <Auth_modal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} defaultMode={authMode} />
     </>
   )
 }

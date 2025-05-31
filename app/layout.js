@@ -2,6 +2,7 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { Providers } from "@/providers/sessionProvider";
 
 
 
@@ -18,9 +19,16 @@ export default function RootLayout({ children }) {
        <head>
       </head>
       <body className={`${outfit.className}`}>
+       
+       <Providers>
+         
         <Navbar />
+       
         {children}
+        
         <Footer />
+       </Providers>
+      
       </body>
     </html>
   );
