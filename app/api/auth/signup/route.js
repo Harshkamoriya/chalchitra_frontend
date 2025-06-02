@@ -1,6 +1,6 @@
-import { connectToDB } from "lib/db"; // ✅ Correct function name
-import User from "@/models/User_temp";
 import bcrypt from "bcryptjs";
+import User from "@/models/user";
+import { connectToDB } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {
