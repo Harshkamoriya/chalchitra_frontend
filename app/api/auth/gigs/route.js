@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import User from "@/models/user";
 import Gigs from "@/models/Gigs";
-import connectToDB from "@/utils/connectToDB";
 import { getServerSession } from "next-auth";
+import { connectToDB } from "@/lib/db";
 
 
 export async function POST(req){

@@ -1,6 +1,6 @@
 import Gigs from "@/models/Gigs";
-import connectToDB from "@/utils/connectToDB";
-import { getServerSession } from "next-auth";   
+import { getServerSession } from "next-auth"
+import { connectToDB } from "@/lib/db";   
 
 export async function PUT(req, { params }) {
   try {
